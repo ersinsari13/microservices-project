@@ -91,9 +91,7 @@ pipeline {
                     """
                     script {
                         echo "Kubernetes Master is not UP and running yet."
-                        env.id = sh(script: 'aws ec2 describe-instances --filters Name=tag-value,Values=master
-                        Name=tag-value,Values=tera-kube-ans Name_instance-state-name,Values=running --query 
-                        Reservations[*].Instances[*].[InstanceId] --output text', returnStdout:true).trim()
+                        env.id = sh(script: 'aws ec2 describe-instances --filters Name=tag-value,Values=master Name=tag-value,Values=tera-kube-ans Name_instance-state-name,Values=running --query Reservations[*].Instances[*].[InstanceId] --output text', returnStdout:true).trim()
                         sh 'aws ec2 wait instance-status-ok --instance-ids $id'
                     }
                 }
@@ -101,8 +99,7 @@ pipeline {
             stage('Create Kubernetes Cluster for QA Automation Build') {
                 steps {
                     echo 'Setup Kubernetes cluster for ${APP_NAME} App'
-                    sh " ansible-playbook -i ./ansible7inventory/dev_stack_dynamic_inventory_aws_ec2.yaml  
-                    ./ansible/playbooks/k8s_setup.yaml"
+                    sh " ansible-playbook -i ./ansible7inventory/dev_stack_dynamic_inventory_aws_ec2.yaml ./ansible/playbooks/k8s_setup.yaml"
                 }
             }
             stage('Deploy App on Kubernetes Cluster') {
@@ -119,10 +116,7 @@ pipeline {
                 steps {
                     echo "Check if the ${APP_NAME} app is ready or not"
                     script {
-                        env.MASTER_PUBLIC_IP = sh(script:"aws ec2 describe-instances --region ${AWS_REGION}
-                        --filters Name=tag-value,Values=master Name_tag-value,Values=tera-kube-ans 
-                        Name=instance-state-name,Values=running --query Reservations[*].Instances[*].[PublicIpAddress] --output text", 
-                        returnStdout:true).trim()
+                        env.MASTER_PUBLIC_IP = sh(script:"aws ec2 describe-instances --region ${AWS_REGION} --filters Name=tag-value,Values=master Name_tag-value,Values=tera-kube-ans Name=instance-state-name,Values=running --query Reservations[*].Instances[*].[PublicIpAddress] --output text", returnStdout:true).trim()
                         while(true) {
                             try{
                                 sh "curl -s ${MASTER_PUBLIC_IP}:30001"
@@ -140,9 +134,7 @@ pipeline {
             stage('Run QA Automation Test') {
                 steps {
                     echo "Run the Selenium Functional Test on QA Environment"
-                    sh 'ansible-playbook -vvv -connection=local --inventory 127.0.0.1,
-                    --extra-vars "workspace=${WORKSPACE} master_public_ip=${MASTER_PUBLIC_IP}
-                    "./ansible/playbooks/pb_run_selenium_jobs.yaml'
+                    sh 'ansible-playbook -vvv -connection=local --inventory 127.0.0.1, --extra-vars "workspace=${WORKSPACE} master_public_ip=${MASTER_PUBLIC_IP}"./ansible/playbooks/pb_run_selenium_jobs.yaml'
                 }
             }
         }
@@ -158,9 +150,9 @@ pipeline {
                 echo 'Delete the Image Repository on ECR'
                 sh """
                     aws ecr delete-repository \
-                    --repository-name ${APP_REPO_NAME} \
-                    --region ${AWS_REGION}\
-                    --force
+                        --repository-name ${APP_REPO_NAME} \
+                        --region ${AWS_REGION}\
+                        --force
                 """
                 echo 'Tear down the Kubernetes Cluster'
                 sh "cd infrastructure/dev-k8s-terraform"
