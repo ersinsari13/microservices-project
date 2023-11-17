@@ -13,15 +13,15 @@ pipeline {
         stages {
             stage('Create ECR Private Repo') {
                 steps {
-                echo "Creating ECR Private Repo for ${APP_NAME}"
-                sh '''
-                aws ecr describe-repositories --repository-names ${APP_REPO_NAME} --region $AWS_REGION || \
-                    aws ecr create-repository \
-                    --repository-name ${APP_REPO_NAME} \
-                    --image-scanning-configuration false \
-                    --image-tag-mutability MUTABLE \
-                    --region  $AWS_REGION
-                '''
+                    echo "Creating ECR Private Repo for ${APP_NAME}"
+                    sh '''
+                    aws ecr describe-repositories --repository-name ${APP_REPO_NAME} --region $AWS_REGION || \
+                        aws ecr create-repository \
+                        --repository-name ${APP_REPO_NAME} \
+                        --image-scanning-configuration false \
+                        --image-tag-mutability MUTABLE \
+                        --region  $AWS_REGION
+                    '''
                 }
             }
             stage('Package application') {
