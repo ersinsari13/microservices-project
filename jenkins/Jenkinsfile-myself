@@ -12,6 +12,7 @@ pipeline {
         }
         stages {
             stage('Create ECR Private Repo') {
+                steps {
                 echo "Creating ECR Private Repo for ${APP_NAME}"
                 sh '''
                 aws ecr describe-repositories --repository-names ${APP_REPO_NAME} --region $AWS_REGION || \
@@ -21,6 +22,7 @@ pipeline {
                     --image-tag-mutability MUTABLE \
                     --region  $AWS_REGION
                 '''
+                }
             }
             stage('Package application') {
                 agent {
@@ -103,6 +105,7 @@ pipeline {
                 }
             }
             stage('Deploy App on Kubernetes Cluster') {
+                steps {
                 sh "envsubst < k8s/petclinic_chart/values-template.yaml >"
                 sh "sed -i s/HELM_VERSION/${BUILD_NUMBER}/ k8s/petclinic_chart/Chart.yaml"
                 sh "helm repo add stable-petclinic s3://petclinic-helm-charts-ersin/stable/myapp/"
@@ -111,6 +114,7 @@ pipeline {
                 sh "envsubst < ansible/playbooks/dev-petclinic-deploy-template > ansible/playbooks/dev-petclinic-deploy.yaml"
                 sh "sleep 60"
                 sh "ansible-playbook -i ./ansible/inventory/dev_stack_dynamic_inventory_aws_ec2.yaml ./ansible/playbooks/dev-petclinic-deploy.yaml"
+                }
             }
             stage('Test the Application Deployment') {
                 steps {
